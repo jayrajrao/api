@@ -1,9 +1,8 @@
 const express = require("express");
-
 const router = express.Router();
 
 const ProductController = require("../controller/ProductController");
-const users_auth = require("../middleware/auth"); // ✅ SAME FILE
+const users_auth = require("../middleware/auth");
 
 // ===== Admin / Protected Routes =====
 router.post("/", users_auth, ProductController.create);

@@ -7,8 +7,9 @@ class UserController {
   // ================= REGISTER =================
   static register = async (req, res) => {
     try {
-      const { name, email, password, cpassword, phone } = req.body;
+      const { name, email, password, cpassword } = req.body;
 
+      // Validation
       if (!name || !email || !password || !cpassword) {
         return res.status(400).json({
           success: false,
@@ -19,7 +20,7 @@ class UserController {
       if (password !== cpassword) {
         return res.status(400).json({
           success: false,
-          message: "Password not matched",
+          message: "Passwords do not match",
         });
       }
 
@@ -33,14 +34,11 @@ class UserController {
 
       const hashPassword = await bcrypt.hash(password, 10);
 
-      const user = new UserModel({
+      await UserModel.create({
         name,
         email,
-        phone,
         password: hashPassword,
       });
-
-      await user.save();
 
       res.status(201).json({
         success: true,
@@ -64,7 +62,7 @@ class UserController {
       if (!email || !password) {
         return res.status(400).json({
           success: false,
-          message: "Email and password required",
+          message: "Email and password are required",
         });
       }
 
@@ -72,7 +70,7 @@ class UserController {
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: "Invalid credentials",
+          message: "Invalid email or password",
         });
       }
 
@@ -80,7 +78,7 @@ class UserController {
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: "Invalid credentials",
+          message: "Invalid email or password",
         });
       }
 
@@ -92,14 +90,19 @@ class UserController {
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: false, // production me true
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
       });
 
       res.status(200).json({
         success: true,
         message: "Login successful",
-        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       });
 
     } catch (error) {
@@ -113,11 +116,31 @@ class UserController {
 
   // ================= LOGOUT =================
   static logout = async (req, res) => {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "lax",
+    });
+
     res.status(200).json({
       success: true,
       message: "Logout successful",
     });
+  };
+
+  // ================= GET LOGGED-IN USER =================
+  static getProfile = async (req, res) => {
+    try {
+      const user = await UserModel.findById(req.user.id).select("-password");
+      res.status(200).json({
+        success: true,
+        user,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch profile",
+      });
+    }
   };
 }
 

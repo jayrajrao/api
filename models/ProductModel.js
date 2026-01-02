@@ -1,87 +1,69 @@
 const mongoose = require("mongoose");
 
-
-
-//define schema
 const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
     },
+
     description: {
       type: String,
       required: true,
     },
+
     price: {
       type: Number,
+      required: true,
     },
+
+    stock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+
+    category: {
+      type: String,
+      required: true,
+    },
+
     rating: {
       type: Number,
       default: 0,
     },
-    category: {
-      type: String,
-    },
-    Stock: {
+
+    numOfReviews: {
       type: Number,
+      default: 0,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+
+    images: {
+      public_id: {
+        type: String,
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      },
     },
-      
+
     productID: {
       type: String,
       unique: true,
-   
     },
-    // numOfReviews: {
-    //   type: Number,
-    //   required:true
-    // },
-    // reviews:[ {
-    //   name:{
-    //       type:String,
-    //   },
-    //   rating:{
-    //       type:Number,
-    //   },
-    //   comment:{
-    //       type:String,
-    //       required:true
-    //   }
-
-    // },],
-    images: [
-      {
-        public_id: {
-          type: String,
-        },
-        url: {
-          type: String,
-        },
-      },
-    ],
   },
   { timestamps: true }
 );
 
-function generateUniqueProductID() {
-  // Implement your logic to generate a unique product ID here
-  // For example, you can use a combination of letters, numbers, and timestamps
-  const uniqueID = "PROD-" + Date.now(); // Example logic, use your own
-  return uniqueID;
-}
+// ===== Auto Product ID =====
 productSchema.pre("save", function (next) {
-  const product = this;
-  if (!product.productID) {
-    // Replace this logic with your own logic for generating a unique productID
-    product.productID = generateUniqueProductID();
+  if (!this.productID) {
+    this.productID = "PROD-" + Date.now();
   }
   next();
 });
-//create collection
-let ProductModel = mongoose.model("Product", productSchema);
 
-module.exports = ProductModel;
+module.exports = mongoose.model("Product", productSchema);

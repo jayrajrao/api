@@ -1,36 +1,32 @@
 const mongoose = require("mongoose");
 
-var jwt = require('jsonwebtoken')
-
 const UserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-    } ,
+      trim: true,
+    },
+
     email: {
       type: String,
       required: true,
+      unique: true,
+      lowercase: true,
     },
-    // phone: {
-    //   type: Number,
-    //   required:true,
-    // },
+
     password: {
       type: String,
-      required:true
+      required: true,
     },
-    // createdAt: {
-    //   type: Date,
-    //   default: Date.now,
-    // },
-  //  cpassword:{
-  //   type:String,
-  //   required:true
-  //  }
-  
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
-  
+  { timestamps: true }
 );
-let UserModel = mongoose.model("user", UserSchema);
-module.exports = UserModel;
+
+module.exports = mongoose.model("User", UserSchema);

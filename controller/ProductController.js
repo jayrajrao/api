@@ -1,20 +1,28 @@
-var cloudinary = require("cloudinary").v2;
-//calling model
+const cloudinary = require("cloudinary").v2;
 const ProductModel = require("../models/ProductModel");
 
-// const jwt = require("jsonwebtoken");
-//clouidanery configration
+// ================= Cloudinary Config =================
 cloudinary.config({
-  cloud_name: "dzdnamaqf",
-  api_key: "453969946325322",
-  api_secret: "I0XGUftEgyZR_H2FC7MeD8gTSoM",
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 class ProductController {
 
-  // ===== CREATE PRODUCT =====
+  // ================= CREATE PRODUCT =================
   static create = async (req, res) => {
     try {
+      const { name, description, price, category, stock, productID } = req.body;
+
+      // Basic validation
+      if (!name || !price || !category) {
+        return res.status(400).json({
+          success: false,
+          message: "Name, price and category are required",
+        });
+      }
+
       if (!req.files || !req.files.image) {
         return res.status(400).json({
           success: false,
@@ -22,27 +30,16 @@ class ProductController {
         });
       }
 
-      const file = req.files.image;
+      // Upload image
       const uploadImage = await cloudinary.uploader.upload(
-        file.tempFilePath,
+        req.files.image.tempFilePath,
         { folder: "products" }
       );
-
-      const {
-        name,
-        description,
-        price,
-        rating,
-        category,
-        stock,
-        productID,
-      } = req.body;
 
       const product = await ProductModel.create({
         name,
         description,
         price,
-        rating,
         category,
         stock,
         productID,
@@ -65,7 +62,7 @@ class ProductController {
     }
   };
 
-  // ===== GET ALL PRODUCTS =====
+  // ================= GET ALL PRODUCTS =================
   static getAll = async (req, res) => {
     try {
       const products = await ProductModel.find();
@@ -81,7 +78,7 @@ class ProductController {
     }
   };
 
-  // ===== GET SINGLE PRODUCT =====
+  // ================= GET SINGLE PRODUCT =================
   static getById = async (req, res) => {
     try {
       const product = await ProductModel.findById(req.params.id);
@@ -104,7 +101,7 @@ class ProductController {
     }
   };
 
-  // ===== UPDATE PRODUCT =====
+  // ================= UPDATE PRODUCT =================
   static update = async (req, res) => {
     try {
       const product = await ProductModel.findById(req.params.id);
@@ -117,6 +114,7 @@ class ProductController {
 
       let imageData = product.images;
 
+      // If new image uploaded
       if (req.files && req.files.image) {
         // delete old image
         await cloudinary.uploader.destroy(product.images.public_id);
@@ -132,14 +130,14 @@ class ProductController {
         };
       }
 
-      await ProductModel.findByIdAndUpdate(
-        req.params.id,
-        {
-          ...req.body,
-          images: imageData,
-        },
-        { new: true }
-      );
+      await ProductModel.findByIdAndUpdate(req.params.id, {
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        category: req.body.category,
+        stock: req.body.stock,
+        images: imageData,
+      });
 
       res.status(200).json({
         success: true,
@@ -154,7 +152,7 @@ class ProductController {
     }
   };
 
-  // ===== DELETE PRODUCT =====
+  // ================= DELETE PRODUCT =================
   static delete = async (req, res) => {
     try {
       const product = await ProductModel.findById(req.params.id);
