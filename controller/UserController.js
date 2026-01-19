@@ -6,16 +6,17 @@ class UserController {
 
   // ================= REGISTER =================
   static register = async (req, res) => {
+    console.log("🔥 REGISTER FUNCTION HIT 🔥");
     try {
       const { name, email, password, cpassword } = req.body;
-
+console.log("REQ BODY:", req.body);
       // Validation
       if (!name || !email || !password || !cpassword) {
-        return res.status(400).json({
-          success: false,
-          message: "All fields are required",
-        });
-      }
+  return res.status(400).json({
+    success: false,
+    message: "🔥 REGISTER VALIDATION HIT 🔥",
+  });
+}
 
       if (password !== cpassword) {
         return res.status(400).json({

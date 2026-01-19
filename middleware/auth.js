@@ -3,12 +3,12 @@ const UserModel = require("../models/UserModel");
 
 const users_auth = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized",
+        message: "Unauthorized - token missing",
       });
     }
 
@@ -22,13 +22,12 @@ const users_auth = async (req, res, next) => {
       });
     }
 
-    req.user = user; // 🔥 important
+    req.user = user;
     next();
-
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Invalid token",
+      message: "Invalid or expired token",
     });
   }
 };

@@ -1,19 +1,21 @@
 const express = require("express");
-const PaymentController = require("../controller/PaymentController");
 const router = express.Router();
 
+const PaymentController = require("../controller/PaymentController");
+const users_auth = require("../middleware/auth");
 
-
-// CREATE PAYMENT INTENT
+// CREATE RAZORPAY ORDER
 router.post(
-  "/create-payment-intent",
-  PaymentController.createPaymentIntent
+  "/create-order",
+  users_auth,
+  PaymentController.createOrder
 );
 
-// CONFIRM PAYMENT
+// VERIFY PAYMENT
 router.post(
-  "/confirm-payment",
-  PaymentController.confirmPayment
+  "/verify",
+  users_auth,
+  PaymentController.verifyPayment
 );
 
 module.exports = router;

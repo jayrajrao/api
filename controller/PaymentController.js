@@ -1,14 +1,20 @@
-const Stripe = require("stripe");
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 const OrderModel = require("../models/OrderModel");
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("❌ STRIPE_SECRET_KEY missing in .env");
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  throw new Error("❌ Razorpay keys missing in .env");
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 class PaymentController {
-  static createPaymentIntent = async (req, res) => {
+
+  // ================= CREATE RAZORPAY ORDER =================
+  static createOrder = async (req, res) => {
     try {
       const { orderId } = req.body;
 
@@ -20,33 +26,58 @@ class PaymentController {
         });
       }
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(order.totalAmount * 100),
-        currency: "inr",
-        metadata: { orderId },
+      const razorpayOrder = await razorpay.orders.create({
+        amount: Math.round(order.totalAmount * 100), // ₹ → paise
+        currency: "INR",
+        receipt: `order_${order._id}`,
       });
 
-      order.paymentIntentId = paymentIntent.id;
+      order.razorpayOrderId = razorpayOrder.id;
+      order.paymentStatus = "pending";
       await order.save();
 
       res.status(200).json({
         success: true,
-        clientSecret: paymentIntent.client_secret,
+        razorpayOrder,
+        key: process.env.RAZORPAY_KEY_ID, // frontend ke liye
       });
+
     } catch (error) {
       console.error(error);
       res.status(500).json({
         success: false,
-        message: "Payment intent creation failed",
+        message: "Razorpay order creation failed",
       });
     }
   };
 
-  static confirmPayment = async (req, res) => {
+  // ================= VERIFY PAYMENT =================
+  static verifyPayment = async (req, res) => {
     try {
-      const { paymentIntentId } = req.body;
+      const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      } = req.body;
 
-      const order = await OrderModel.findOne({ paymentIntentId });
+      const sign = razorpay_order_id + "|" + razorpay_payment_id;
+
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(sign)
+        .digest("hex");
+
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid payment signature",
+        });
+      }
+
+      const order = await OrderModel.findOne({
+        razorpayOrderId: razorpay_order_id,
+      });
+
       if (!order) {
         return res.status(404).json({
           success: false,
@@ -55,16 +86,19 @@ class PaymentController {
       }
 
       order.paymentStatus = "paid";
+      order.paymentId = razorpay_payment_id;
       await order.save();
 
       res.status(200).json({
         success: true,
-        message: "Payment successful",
+        message: "Payment verified successfully",
       });
+
     } catch (error) {
+      console.error(error);
       res.status(500).json({
         success: false,
-        message: "Payment confirmation failed",
+        message: "Payment verification failed",
       });
     }
   };
