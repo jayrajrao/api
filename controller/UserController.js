@@ -89,15 +89,17 @@ console.log("REQ BODY:", req.body);
         { expiresIn: "7d" }
       );
 
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
+   res.cookie("token", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // ⭐ add expiry
+});
 
       res.status(200).json({
         success: true,
         message: "Login successful",
+        token,
         user: {
           id: user._id,
           name: user.name,
@@ -117,10 +119,11 @@ console.log("REQ BODY:", req.body);
 
   // ================= LOGOUT =================
   static logout = async (req, res) => {
-    res.clearCookie("token", {
-      httpOnly: true,
-      sameSite: "lax",
-    });
+  res.clearCookie("token", {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+});
 
     res.status(200).json({
       success: true,
