@@ -2,6 +2,7 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const OrderModel = require("../models/OrderModel");
 
+// 🔐 Razorpay instance
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error("❌ Razorpay keys missing in .env");
 }
@@ -12,13 +13,12 @@ const razorpay = new Razorpay({
 });
 
 class PaymentController {
-
   // ================= CREATE RAZORPAY ORDER =================
- static createOrder = async (req, res) => {
+  static createOrder = async (req, res) => {
     try {
       const { orderId } = req.body;
 
-      /
+      // 🛑 validation
       if (!orderId) {
         return res.status(400).json({
           success: false,
@@ -26,7 +26,7 @@ class PaymentController {
         });
       }
 
-      // 🔍 find order
+      // 🔍 find order (optional: add user check if needed)
       const order = await OrderModel.findById(orderId);
 
       if (!order) {
@@ -41,6 +41,19 @@ class PaymentController {
         return res.status(400).json({
           success: false,
           message: "Order already paid",
+        });
+      }
+
+      // 🛑 prevent duplicate razorpay order creation
+      if (order.razorpayOrderId) {
+        return res.status(200).json({
+          success: true,
+          razorpayOrder: {
+            id: order.razorpayOrderId,
+            amount: Math.round(order.totalAmount * 100),
+            currency: "INR",
+          },
+          key: process.env.RAZORPAY_KEY_ID,
         });
       }
 
@@ -72,7 +85,7 @@ class PaymentController {
   };
 
   // ================= VERIFY PAYMENT =================
-   static verifyPayment = async (req, res) => {
+  static verifyPayment = async (req, res) => {
     try {
       const {
         razorpay_order_id,
@@ -116,6 +129,14 @@ class PaymentController {
         return res.status(404).json({
           success: false,
           message: "Order not found",
+        });
+      }
+
+      // 🛑 prevent double marking
+      if (order.paymentStatus === "paid") {
+        return res.status(200).json({
+          success: true,
+          message: "Payment already verified",
         });
       }
 
