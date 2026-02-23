@@ -72,7 +72,7 @@ class PaymentController {
   };
 
   // ================= VERIFY PAYMENT =================
-  static verifyPayment = async (req, res) => {
+   static verifyPayment = async (req, res) => {
     try {
       const {
         razorpay_order_id,
@@ -80,6 +80,19 @@ class PaymentController {
         razorpay_signature,
       } = req.body;
 
+      // 🛑 validation
+      if (
+        !razorpay_order_id ||
+        !razorpay_payment_id ||
+        !razorpay_signature
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing payment fields",
+        });
+      }
+
+      // 🔐 signature verify
       const sign = razorpay_order_id + "|" + razorpay_payment_id;
 
       const expectedSignature = crypto
@@ -94,6 +107,7 @@ class PaymentController {
         });
       }
 
+      // 🔍 find order
       const order = await OrderModel.findOne({
         razorpayOrderId: razorpay_order_id,
       });
@@ -105,18 +119,18 @@ class PaymentController {
         });
       }
 
+      // ✅ mark paid
       order.paymentStatus = "paid";
       order.paymentId = razorpay_payment_id;
       await order.save();
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Payment verified successfully",
       });
-
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
+      console.error("Verify Payment Error:", error);
+      return res.status(500).json({
         success: false,
         message: "Payment verification failed",
       });
