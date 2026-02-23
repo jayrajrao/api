@@ -14,11 +14,21 @@ const razorpay = new Razorpay({
 class PaymentController {
 
   // ================= CREATE RAZORPAY ORDER =================
-  static createOrder = async (req, res) => {
+ static createOrder = async (req, res) => {
     try {
       const { orderId } = req.body;
 
+      /
+      if (!orderId) {
+        return res.status(400).json({
+          success: false,
+          message: "orderId is required",
+        });
+      }
+
+      // 🔍 find order
       const order = await OrderModel.findById(orderId);
+
       if (!order) {
         return res.status(404).json({
           success: false,
@@ -26,25 +36,35 @@ class PaymentController {
         });
       }
 
+      // 🛑 prevent double payment
+      if (order.paymentStatus === "paid") {
+        return res.status(400).json({
+          success: false,
+          message: "Order already paid",
+        });
+      }
+
+      // 💰 create razorpay order
       const razorpayOrder = await razorpay.orders.create({
         amount: Math.round(order.totalAmount * 100), // ₹ → paise
         currency: "INR",
         receipt: `order_${order._id}`,
       });
 
+      // 💾 save razorpay order id
       order.razorpayOrderId = razorpayOrder.id;
       order.paymentStatus = "pending";
       await order.save();
 
-      res.status(200).json({
+      // ✅ response
+      return res.status(200).json({
         success: true,
         razorpayOrder,
-        key: process.env.RAZORPAY_KEY_ID, // frontend ke liye
+        key: process.env.RAZORPAY_KEY_ID,
       });
-
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
+      console.error("Create Razorpay Order Error:", error);
+      return res.status(500).json({
         success: false,
         message: "Razorpay order creation failed",
       });
