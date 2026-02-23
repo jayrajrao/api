@@ -2,7 +2,7 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const OrderModel = require("../models/OrderModel");
 
-// 🔐 Razorpay instance
+// 🔐 Razorpay instance check
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error("❌ Razorpay keys missing in .env");
 }
@@ -26,7 +26,7 @@ class PaymentController {
         });
       }
 
-      // 🔍 find order (optional: add user check if needed)
+      // 🔍 find order
       const order = await OrderModel.findById(orderId);
 
       if (!order) {
@@ -36,11 +36,27 @@ class PaymentController {
         });
       }
 
+      // 🔒 OPTIONAL: user ownership check (recommended)
+      // if (order.user.toString() !== req.user.id) {
+      //   return res.status(403).json({
+      //     success: false,
+      //     message: "Unauthorized access to order",
+      //   });
+      // }
+
       // 🛑 prevent double payment
       if (order.paymentStatus === "paid") {
         return res.status(400).json({
           success: false,
           message: "Order already paid",
+        });
+      }
+
+      // 🛑 validate amount
+      if (!order.totalAmount || order.totalAmount <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order amount",
         });
       }
 
@@ -61,7 +77,7 @@ class PaymentController {
       const razorpayOrder = await razorpay.orders.create({
         amount: Math.round(order.totalAmount * 100), // ₹ → paise
         currency: "INR",
-        receipt: `order_${order._id}`,
+        receipt: `order_${order._id.toString().slice(-20)}`, // safe length
       });
 
       // 💾 save razorpay order id
@@ -96,7 +112,7 @@ class PaymentController {
       // 🛑 validation
       if (
         !razorpay_order_id ||
-        !razorpay_payment_id ||
+        !razaropay_payment_id ||
         !razorpay_signature
       ) {
         return res.status(400).json({
@@ -113,7 +129,13 @@ class PaymentController {
         .update(sign)
         .digest("hex");
 
-      if (expectedSignature !== razorpay_signature) {
+      // ✅ timing-safe compare
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignature),
+        Buffer.from(razorpay_signature)
+      );
+
+      if (!isValid) {
         return res.status(400).json({
           success: false,
           message: "Invalid payment signature",
@@ -143,6 +165,7 @@ class PaymentController {
       // ✅ mark paid
       order.paymentStatus = "paid";
       order.paymentId = razorpay_payment_id;
+      order.paidAt = new Date();
       await order.save();
 
       return res.status(200).json({
