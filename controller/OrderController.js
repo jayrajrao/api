@@ -7,7 +7,8 @@ class OrderController {
   static createOrder = async (req, res) => {
     try {
       const cart = await CartModel.findOne({ user: req.user.id });
-
+console.log("REQ USER:", req.user);
+console.log("CART FOUND:", cart);
       if (!cart || cart.items.length === 0) {
         return res.status(400).json({
           success: false,
