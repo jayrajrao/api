@@ -36,7 +36,7 @@ class CartController {
   static addToCart = async (req, res) => {
     try {
       const { productId, quantity } = req.body;
-
+console.log("ADD TO CART USER:", req.user.id);
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -52,16 +52,16 @@ class CartController {
         });
       }
 
-      let cart = await CartModel.findOne({ user: req.user.id });
+   let cart = await CartModel.findOne({ user: req.user.id });
 
-      if (!cart) {
-        cart = new CartModel({
-          user: req.user.id,
-          items: [],
-          totalQuantity: 0,
-          totalPrice: 0,
-        });
-      }
+if (!cart) {
+  cart = await CartModel.create({
+    user: req.user.id,
+    items: [],
+    totalQuantity: 0,
+    totalPrice: 0,
+  });
+}
 
       const itemIndex = cart.items.findIndex(
         (item) => item.product.toString() === productId
