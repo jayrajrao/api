@@ -1,33 +1,37 @@
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/UserModel");
 
-const users_auth = async (req, res, next) => {
-  try {
-    const token = req.cookies?.token;
 
-    if (!token) {
+const users_auth = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized - token missing",
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
 
-    const user = await UserModel.findById(decoded.id).select("-password");
-    if (!user) {
+    if (!token) {
       return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "Unauthorized - invalid token format",
       });
     }
 
-    req.user = user;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded;
     next();
-  } catch (error) {
+  } catch (err) {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Unauthorized - token invalid",
     });
   }
 };
