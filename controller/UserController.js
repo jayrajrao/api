@@ -39,6 +39,7 @@ console.log("REQ BODY:", req.body);
         name,
         email,
         password: hashPassword,
+        role: "user"
       });
 
       res.status(201).json({
@@ -134,7 +135,7 @@ console.log("REQ BODY:", req.body);
   // ================= GET LOGGED-IN USER =================
   static getProfile = async (req, res) => {
     try {
-      const user = await UserModel.findById(req.user.id).select("-password");
+      const user = await UserModel.findById(req.user._id).select("-password");
       res.status(200).json({
         success: true,
         user,

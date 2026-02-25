@@ -5,7 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const connectdb = require("./db/connectdb");
-
+const seedAdmin = require('./utils/seedAdmin')
 const app = express();
 
 // ================= Middleware =================
@@ -23,6 +23,8 @@ app.use(
 // ================= Database =================
 connectdb();
 
+
+seedAdmin()
 // ================= Routes =================
 // app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));

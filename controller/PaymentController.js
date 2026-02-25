@@ -1,6 +1,8 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const OrderModel = require("../models/OrderModel");
+const ProductModel = require("../models/ProductModel");
+const CartModel = require("../models/CartModel");
 
 // 🔐 Razorpay instance check
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -18,7 +20,6 @@ class PaymentController {
     try {
       const { orderId } = req.body;
 
-      // 🛑 validation
       if (!orderId) {
         return res.status(400).json({
           success: false,
@@ -26,7 +27,6 @@ class PaymentController {
         });
       }
 
-      // 🔍 find order
       const order = await OrderModel.findById(orderId);
 
       if (!order) {
@@ -36,13 +36,13 @@ class PaymentController {
         });
       }
 
-      // 🔒 OPTIONAL: user ownership check (recommended)
-      // if (order.user.toString() !== req.user.id) {
-      //   return res.status(403).json({
-      //     success: false,
-      //     message: "Unauthorized access to order",
-      //   });
-      // }
+      // ✅ ownership check (IMPORTANT)
+      if (order.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized access to order",
+        });
+      }
 
       // 🛑 prevent double payment
       if (order.paymentStatus === "paid") {
@@ -75,9 +75,9 @@ class PaymentController {
 
       // 💰 create razorpay order
       const razorpayOrder = await razorpay.orders.create({
-        amount: Math.round(order.totalAmount * 100), // ₹ → paise
+        amount: Math.round(order.totalAmount * 100),
         currency: "INR",
-        receipt: `order_${order._id.toString().slice(-20)}`, // safe length
+        receipt: `order_${order._id.toString().slice(-20)}`,
       });
 
       // 💾 save razorpay order id
@@ -85,7 +85,6 @@ class PaymentController {
       order.paymentStatus = "pending";
       await order.save();
 
-      // ✅ response
       return res.status(200).json({
         success: true,
         razorpayOrder,
@@ -109,10 +108,10 @@ class PaymentController {
         razorpay_signature,
       } = req.body;
 
-      // 🛑 validation
+      // 🛑 validation (FIXED TYPO)
       if (
         !razorpay_order_id ||
-        !razaropay_payment_id ||
+        !razorpay_payment_id ||
         !razorpay_signature
       ) {
         return res.status(400).json({
@@ -129,13 +128,14 @@ class PaymentController {
         .update(sign)
         .digest("hex");
 
-      // ✅ timing-safe compare
-      const isValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignature),
-        Buffer.from(razorpay_signature)
-      );
-
-      if (!isValid) {
+      // ✅ safe compare
+      if (
+        expectedSignature.length !== razorpay_signature.length ||
+        !crypto.timingSafeEqual(
+          Buffer.from(expectedSignature),
+          Buffer.from(razorpay_signature)
+        )
+      ) {
         return res.status(400).json({
           success: false,
           message: "Invalid payment signature",
@@ -162,11 +162,33 @@ class PaymentController {
         });
       }
 
-      // ✅ mark paid
+      // ================= STOCK REDUCTION =================
+      for (const item of order.items) {
+        const product = await ProductModel.findById(item.product);
+
+        if (!product) continue;
+
+        if (product.stock < item.quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${product.name}`,
+          });
+        }
+
+        product.stock -= item.quantity;
+        await product.save();
+      }
+
+      // ================= MARK ORDER PAID =================
       order.paymentStatus = "paid";
       order.paymentId = razorpay_payment_id;
       order.paidAt = new Date();
+      order.orderStatus = "processing";
+
       await order.save();
+
+      // ================= CLEAR USER CART =================
+      await CartModel.findOneAndDelete({ user: order.user });
 
       return res.status(200).json({
         success: true,
