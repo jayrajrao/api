@@ -62,21 +62,60 @@ class ProductController {
     }
   };
 
-  // ================= GET ALL PRODUCTS =================
-  static getAll = async (req, res) => {
-    try {
-      const products = await ProductModel.find();
-      res.status(200).json({
-        success: true,
-        products,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch products",
-      });
+
+static getAll = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+    const keyword = req.query.keyword?.trim();
+    const category = req.query.category?.trim();
+    const minPrice = Number(req.query.minPrice);
+    const maxPrice = Number(req.query.maxPrice);
+
+    const query = {};
+
+    // ✅ keyword filter
+    if (keyword) {
+      query.name = { $regex: keyword, $options: "i" };
     }
-  };
+
+    // ✅ category filter (CASE-INSENSITIVE — IMPORTANT)
+    if (category) {
+      query.category = { $regex: `^${category}$`, $options: "i" };
+    }
+
+    // ✅ price filter
+    if (!isNaN(minPrice) || !isNaN(maxPrice)) {
+      query.price = {};
+      if (!isNaN(minPrice)) query.price.$gte = minPrice;
+      if (!isNaN(maxPrice)) query.price.$lte = maxPrice;
+    }
+
+    console.log("FINAL QUERY:", query);
+
+    const products = await ProductModel.find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    const total = await ProductModel.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalProducts: total,
+      products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
+    });
+  }
+};
 
   // ================= GET SINGLE PRODUCT =================
   static getById = async (req, res) => {
