@@ -94,10 +94,11 @@ static getAll = async (req, res) => {
 
     console.log("FINAL QUERY:", query);
 
-    const products = await ProductModel.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+  const products = await ProductModel.find(query)
+  .sort(sortOption)
+  .skip((page - 1) * limit)
+  .limit(limit)
+  .lean();
 
     const total = await ProductModel.countDocuments(query);
 
