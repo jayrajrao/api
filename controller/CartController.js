@@ -36,6 +36,9 @@ class CartController {
   static addToCart = async (req, res) => {
     try {
       const { productId, quantity } = req.body;
+ console.log("REQ BODY:", req.body);
+console.log("PRODUCT ID:", req.body.productId);
+console.log("QUANTITY:", req.body.quantity);
 console.log("ADD TO CART USER:", req.user.id);
       if (!productId) {
         return res.status(400).json({
