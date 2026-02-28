@@ -68,10 +68,15 @@ static getAll = async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 10, 50);
 
-    const keyword = req.query.keyword?.trim();
+    // ⭐ support BOTH keyword and search
+    const keyword =
+      req.query.keyword?.trim() ||
+      req.query.search?.trim();
+
     const category = req.query.category?.trim();
     const minPrice = Number(req.query.minPrice);
     const maxPrice = Number(req.query.maxPrice);
+    const sort = req.query.sort;
 
     const query = {};
 
@@ -80,7 +85,7 @@ static getAll = async (req, res) => {
       query.name = { $regex: keyword, $options: "i" };
     }
 
-    // ✅ category filter (CASE-INSENSITIVE — IMPORTANT)
+    // ✅ category filter (case-insensitive)
     if (category) {
       query.category = { $regex: `^${category}$`, $options: "i" };
     }
@@ -92,13 +97,24 @@ static getAll = async (req, res) => {
       if (!isNaN(maxPrice)) query.price.$lte = maxPrice;
     }
 
+    // ================= SORTING (⭐ FIXED) =================
+    let sortOption = { createdAt: -1 };
+
+    if (sort === "price_asc") {
+      sortOption = { price: 1 };
+    }
+
+    if (sort === "price_desc") {
+      sortOption = { price: -1 };
+    }
+
     console.log("FINAL QUERY:", query);
 
-  const products = await ProductModel.find(query)
-  .sort(sortOption)
-  .skip((page - 1) * limit)
-  .limit(limit)
-  .lean();
+    const products = await ProductModel.find(query)
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
 
     const total = await ProductModel.countDocuments(query);
 
