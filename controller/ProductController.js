@@ -14,7 +14,8 @@ class ProductController {
   static create = async (req, res) => {
     try {
       const { name, description, price, category, stock, productID } = req.body;
-
+   console.log(req.body)
+   console.log(req.files)
       // Basic validation
       if (!name || !price || !category) {
         return res.status(400).json({
@@ -29,11 +30,11 @@ class ProductController {
           message: "Product image is required",
         });
       }
-
+console.log(files, "files")
       // Upload image
       const uploadImage = await cloudinary.uploader.upload(
         req.files.image.tempFilePath,
-        { folder: "products" }
+        { folder: "productimage" }
       );
 
       const product = await ProductModel.create({
