@@ -11,57 +11,57 @@ cloudinary.config({
 class ProductController {
 
   // ================= CREATE PRODUCT =================
-  static create = async (req, res) => {
-    try {
-      const { name, description, price, category, stock, productID } = req.body;
-   console.log(req.body)
-   console.log(req.files)
-      // Basic validation
-      if (!name || !price || !category) {
-        return res.status(400).json({
-          success: false,
-          message: "Name, price and category are required",
-        });
-      }
+static create = async (req, res) => {
+  try {
+    const { name, description, price, category, stock, productID } = req.body;
 
-      if (!req.files || !req.files.image) {
-        return res.status(400).json({
-          success: false,
-          message: "Product image is required",
-        });
-      }
-console.log(files, "files")
-      // Upload image
-      const uploadImage = await cloudinary.uploader.upload(
-        req.files.image.tempFilePath,
-        { folder: "productimage" }
-      );
+    console.log(req.body);
+    console.log(req.files);
 
-      const product = await ProductModel.create({
-        name,
-        description,
-        price,
-        category,
-        stock,
-        productID,
-        images: {
-          public_id: uploadImage.public_id,
-          url: uploadImage.secure_url,
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        product,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
+    if (!name || !price || !category) {
+      return res.status(400).json({
         success: false,
-        message: "Product creation failed",
+        message: "Name, price and category are required",
       });
     }
-  };
+
+    if (!req.files || !req.files.images) {
+      return res.status(400).json({
+        success: false,
+        message: "Product image is required",
+      });
+    }
+
+    const uploadImage = await cloudinary.uploader.upload(
+      req.files.images.tempFilePath,
+      { folder: "productimage" }
+    );
+
+    const product = await ProductModel.create({
+      name,
+      description,
+      price,
+      category,
+      stock,
+      productID,
+      images: {
+        public_id: uploadImage.public_id,
+        url: uploadImage.secure_url,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Product creation failed",
+    });
+  }
+};
 
 
 static getAll = async (req, res) => {
