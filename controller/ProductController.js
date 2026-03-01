@@ -34,7 +34,7 @@ static create = async (req, res) => {
 
     const uploadImage = await cloudinary.uploader.upload(
       req.files.images.tempFilePath,
-      { folder: "productimage" }
+      { folder: "products" }
     );
 
     const product = await ProductModel.create({
