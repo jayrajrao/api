@@ -15,9 +15,6 @@ static create = async (req, res) => {
   try {
     const { name, description, price, category, stock, productID } = req.body;
 
-    console.log(req.body);
-    console.log(req.files);
-
     if (!name || !price || !category) {
       return res.status(400).json({
         success: false,
@@ -32,11 +29,17 @@ static create = async (req, res) => {
       });
     }
 
+    // ✅ upload to cloudinary
     const uploadImage = await cloudinary.uploader.upload(
       req.files.images.tempFilePath,
-      { folder: "productimage" }
+      {
+        folder: "productimage",
+        unique_filename: true,
+        overwrite: false,
+      }
     );
 
+    // ✅ ALWAYS ARRAY (important)
     const product = await ProductModel.create({
       name,
       description,
@@ -44,10 +47,12 @@ static create = async (req, res) => {
       category,
       stock,
       productID,
-      images: {
-        public_id: uploadImage.public_id,
-        url: uploadImage.secure_url,
-      },
+      images: [
+        {
+          public_id: uploadImage.public_id,
+          url: uploadImage.secure_url,
+        },
+      ],
     });
 
     res.status(201).json({

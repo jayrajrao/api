@@ -24,12 +24,12 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
 
- category: {
-  type: String,
-  required: true,
-  lowercase: true,
-  trim: true,
-},
+    category: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
 
     rating: {
       type: Number,
@@ -41,16 +41,19 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
 
-    images: {
-      public_id: {
-        type: String,
-        required: true,
+    // ✅ FIXED — ARRAY BASED
+    images: [
+      {
+        public_id: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
       },
-      url: {
-        type: String,
-        required: true,
-      },
-    },
+    ],
 
     productID: {
       type: String,
