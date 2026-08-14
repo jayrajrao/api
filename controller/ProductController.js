@@ -81,72 +81,93 @@ class ProductController {
   };
 
   // ================= GET ALL (Public — only approved) =================
-  static getAll = async (req, res) => {
+//   static getAll = async (req, res) => {
   
-    try {
-      const page = Math.max(Number(req.query.page) || 1, 1);
-      const limit = Math.min(Number(req.query.limit) || 10, 50);
+//     try {
+//       const page = Math.max(Number(req.query.page) || 1, 1);
+//       const limit = Math.min(Number(req.query.limit) || 10, 50);
 
-      const keyword = req.query.keyword?.trim() || req.query.search?.trim();
-      const category = req.query.category?.trim();
-      const minPrice = Number(req.query.minPrice);
-      const maxPrice = Number(req.query.maxPrice);
-      const sort = req.query.sort;
+//       const keyword = req.query.keyword?.trim() || req.query.search?.trim();
+//       const category = req.query.category?.trim();
+//       const minPrice = Number(req.query.minPrice);
+//       const maxPrice = Number(req.query.maxPrice);
+//       const sort = req.query.sort;
 
-      // const query = { status: "approved" };  // 👈 public sirf approved dekhein
-      const query = {};
+//       // const query = { status: "approved" };  // 👈 public sirf approved dekhein
+//       const query = {};
 
-const approvedCount = await ProductModel.countDocuments({ status: "approved" });
-const pendingCount = await ProductModel.countDocuments({ status: "pending" });
+// const approvedCount = await ProductModel.countDocuments({ status: "approved" });
+// const pendingCount = await ProductModel.countDocuments({ status: "pending" });
 
-console.log("Approved:", approvedCount);
-console.log("Pending:", pendingCount);
+// console.log("Approved:", approvedCount);
+// console.log("Pending:", pendingCount);
 
-      if (keyword) {
-        query.name = { $regex: keyword, $options: "i" };
-      }
+//       if (keyword) {
+//         query.name = { $regex: keyword, $options: "i" };
+//       }
 
-      if (category) {
-        query.category = category;   // ab category ID hoga
-      }
+//       if (category) {
+//         query.category = category;   // ab category ID hoga
+//       }
 
-      if (!isNaN(minPrice) || !isNaN(maxPrice)) {
-        query.price = {};
-        if (!isNaN(minPrice)) query.price.$gte = minPrice;
-        if (!isNaN(maxPrice)) query.price.$lte = maxPrice;
-      }
+//       if (!isNaN(minPrice) || !isNaN(maxPrice)) {
+//         query.price = {};
+//         if (!isNaN(minPrice)) query.price.$gte = minPrice;
+//         if (!isNaN(maxPrice)) query.price.$lte = maxPrice;
+//       }
 
-      let sortOption = { createdAt: -1 };
-      if (sort === "price_asc") sortOption = { price: 1 };
-      if (sort === "price_desc") sortOption = { price: -1 };
+//       let sortOption = { createdAt: -1 };
+//       if (sort === "price_asc") sortOption = { price: 1 };
+//       if (sort === "price_desc") sortOption = { price: -1 };
 
-      const products = await ProductModel.find(query)
-        .populate("category", "name slug")
-        .populate("vendor", "name businessName")
-        .sort(sortOption)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean();
+//       const products = await ProductModel.find(query)
+//         .populate("category", "name slug")
+//         .populate("vendor", "name businessName")
+//         .sort(sortOption)
+//         .skip((page - 1) * limit)
+//         .limit(limit)
+//         .lean();
 
-      const total = await ProductModel.countDocuments(query);
+//       const total = await ProductModel.countDocuments(query);
 
-      res.status(200).json({
-        success: true,
-        page,
-        totalPages: Math.ceil(total / limit),
-        totalProducts: total,
-        products,
-      });
+//       res.status(200).json({
+//         success: true,
+//         page,
+//         totalPages: Math.ceil(total / limit),
+//         totalProducts: total,
+//         products,
+//       });
      
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch products",
-      });
-    }
-  };
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({
+//         success: false,
+//         message: "Failed to fetch products",
+//       });
+//     }
+//   };
 
+static getAll = async (req, res) => {
+  try {
+    console.log("GET /api/products called");
+
+    const products = await ProductModel.find({});
+
+    return res.status(200).json({
+      success: true,
+      totalProducts: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("GET PRODUCTS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+      stack: error.stack,
+    });
+  }
+};
   // ================= GET SINGLE PRODUCT =================
   static getById = async (req, res) => {
     try {
