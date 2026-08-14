@@ -2,68 +2,44 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    description: {
-      type: String,
-      required: true,
-    },
-
-    price: {
-      type: Number,
-      required: true,
-    },
-
-    stock: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true },
+    stock: { type: Number, required: true, default: 0 },
 
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: true,
-      lowercase: true,
-      trim: true,
     },
 
-    rating: {
-      type: Number,
-      default: 0,
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
 
-    numOfReviews: {
-      type: Number,
-      default: 0,
-    },
+    rating: { type: Number, default: 0 },
+    numOfReviews: { type: Number, default: 0 },
 
-    // ✅ FIXED — ARRAY BASED
     images: [
       {
-        public_id: {
-          type: String,
-          required: true,
-        },
-        url: {
-          type: String,
-          required: true,
-        },
+        public_id: { type: String, required: true },
+        url: { type: String, required: true },
       },
     ],
 
-    productID: {
+    status: {
       type: String,
-      unique: true,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",   
     },
+
+    productID: { type: String, unique: true },
   },
   { timestamps: true }
 );
 
-// ===== Auto Product ID =====
 productSchema.pre("save", function (next) {
   if (!this.productID) {
     this.productID = "PROD-" + Date.now();

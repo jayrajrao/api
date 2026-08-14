@@ -3,11 +3,18 @@ const router = express.Router();
 
 const ProductController = require("../controller/ProductController");
 const users_auth = require("../middleware/auth");
-const isAdmin = require('../middleware/isAdmin')
-// ===== Admin / Protected Routes =====
-router.post("/", users_auth, isAdmin ,ProductController.create);
-router.put("/:id",isAdmin, users_auth, ProductController.update);
-router.delete("/:id", users_auth, isAdmin,  ProductController.delete);
+const isAdmin = require("../middleware/isAdmin");
+const isVendor = require("../middleware/isVendor");
+
+// ===== Vendor/Admin Routes =====
+router.post("/", users_auth, isVendor, ProductController.create);
+router.put("/:id", users_auth, isVendor, ProductController.update);
+router.delete("/:id", users_auth, isVendor, ProductController.delete);
+router.get("/vendor/mine", users_auth, isVendor, ProductController.getMyProducts);
+
+// ===== Admin-only Routes =====
+router.get("/admin/pending", users_auth, isAdmin, ProductController.getPending);
+router.patch("/admin/:id/status", users_auth, isAdmin, ProductController.updateStatus);
 
 // ===== Public Routes =====
 router.get("/", ProductController.getAll);

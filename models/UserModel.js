@@ -22,8 +22,16 @@ const UserSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin", "vendor"],
       default: "user",
+    },
+     businessName: {
+      type: String,
+      trim: true,
+    },
+    isVendorApproved: {
+      type: Boolean,
+      default: false,   
     },
   },
   { timestamps: true }
