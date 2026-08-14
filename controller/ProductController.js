@@ -82,6 +82,7 @@ class ProductController {
 
   // ================= GET ALL (Public — only approved) =================
   static getAll = async (req, res) => {
+  
     try {
       const page = Math.max(Number(req.query.page) || 1, 1);
       const limit = Math.min(Number(req.query.limit) || 10, 50);
@@ -92,7 +93,14 @@ class ProductController {
       const maxPrice = Number(req.query.maxPrice);
       const sort = req.query.sort;
 
-      const query = { status: "approved" };  // 👈 public sirf approved dekhein
+      // const query = { status: "approved" };  // 👈 public sirf approved dekhein
+      const query = {};
+
+const approvedCount = await ProductModel.countDocuments({ status: "approved" });
+const pendingCount = await ProductModel.countDocuments({ status: "pending" });
+
+console.log("Approved:", approvedCount);
+console.log("Pending:", pendingCount);
 
       if (keyword) {
         query.name = { $regex: keyword, $options: "i" };
@@ -129,6 +137,7 @@ class ProductController {
         totalProducts: total,
         products,
       });
+     
     } catch (error) {
       console.error(error);
       res.status(500).json({
