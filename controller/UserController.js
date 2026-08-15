@@ -6,17 +6,16 @@ class UserController {
 
   // ================= REGISTER =================
   static register = async (req, res) => {
-    console.log("🔥 REGISTER FUNCTION HIT 🔥");
     try {
       const { name, email, password, cpassword } = req.body;
-console.log("REQ BODY:", req.body);
+
       // Validation
       if (!name || !email || !password || !cpassword) {
-  return res.status(400).json({
-    success: false,
-    message: "🔥 REGISTER VALIDATION HIT 🔥",
-  });
-}
+        return res.status(400).json({
+          success: false,
+          message: "All fields are required",
+        });
+      }
 
       if (password !== cpassword) {
         return res.status(400).json({
@@ -48,7 +47,6 @@ console.log("REQ BODY:", req.body);
       });
 
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         success: false,
         message: "Server error",
@@ -90,12 +88,12 @@ console.log("REQ BODY:", req.body);
         { expiresIn: "7d" }
       );
 
-   res.cookie("token", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000, // ⭐ add expiry
-});
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
 
       res.status(200).json({
         success: true,
@@ -110,7 +108,6 @@ console.log("REQ BODY:", req.body);
       });
 
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         success: false,
         message: "Server error",
@@ -120,11 +117,11 @@ console.log("REQ BODY:", req.body);
 
   // ================= LOGOUT =================
   static logout = async (req, res) => {
-  res.clearCookie("token", {
-  httpOnly: true,
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
-});
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
 
     res.status(200).json({
       success: true,
@@ -144,7 +141,6 @@ console.log("REQ BODY:", req.body);
       res.status(500).json({
         success: false,
         message: "Failed to fetch profile",
-        //test
       });
     }
   };

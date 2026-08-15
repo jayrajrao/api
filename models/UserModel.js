@@ -8,17 +8,19 @@ const UserSchema = new mongoose.Schema(
       trim: true,
     },
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-    },
-
-    password: {
-      type: String,
-      required: true,
-    },
+   email: {
+  type: String,
+  required: true,
+  unique: true,
+  lowercase: true,
+  trim: true,
+  match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
+},
+password: {
+  type: String,
+  required: true,
+  select: false,   // ab default queries mein nahi aayega
+},
 
     role: {
       type: String,

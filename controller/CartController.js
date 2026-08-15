@@ -36,10 +36,7 @@ class CartController {
   static addToCart = async (req, res) => {
     try {
       const { productId, quantity } = req.body;
- console.log("REQ BODY:", req.body);
-console.log("PRODUCT ID:", req.body.productId);
-console.log("QUANTITY:", req.body.quantity);
-console.log("ADD TO CART USER:", req.user.id);
+
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -55,16 +52,16 @@ console.log("ADD TO CART USER:", req.user.id);
         });
       }
 
-   let cart = await CartModel.findOne({ user: req.user.id });
+      let cart = await CartModel.findOne({ user: req.user.id });
 
-if (!cart) {
-  cart = await CartModel.create({
-    user: req.user.id,
-    items: [],
-    totalQuantity: 0,
-    totalPrice: 0,
-  });
-}
+      if (!cart) {
+        cart = await CartModel.create({
+          user: req.user.id,
+          items: [],
+          totalQuantity: 0,
+          totalPrice: 0,
+        });
+      }
 
       const itemIndex = cart.items.findIndex(
         (item) => item.product.toString() === productId
@@ -102,7 +99,6 @@ if (!cart) {
       });
 
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         success: false,
         message: "Failed to add to cart",

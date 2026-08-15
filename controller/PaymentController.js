@@ -91,7 +91,6 @@ class PaymentController {
         key: process.env.RAZORPAY_KEY_ID,
       });
     } catch (error) {
-      console.error("Create Razorpay Order Error:", error);
       return res.status(500).json({
         success: false,
         message: "Razorpay order creation failed",
@@ -108,7 +107,7 @@ class PaymentController {
         razorpay_signature,
       } = req.body;
 
-      // 🛑 validation (FIXED TYPO)
+      // 🛑 validation
       if (
         !razorpay_order_id ||
         !razorpay_payment_id ||
@@ -195,7 +194,6 @@ class PaymentController {
         message: "Payment verified successfully",
       });
     } catch (error) {
-      console.error("Verify Payment Error:", error);
       return res.status(500).json({
         success: false,
         message: "Payment verification failed",

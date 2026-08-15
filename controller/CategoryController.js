@@ -29,7 +29,6 @@ class CategoryController {
         category,
       });
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         success: false,
         message: "Failed to create category",
@@ -85,7 +84,6 @@ class CategoryController {
         category,
       });
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         success: false,
         message: "Failed to update category",
