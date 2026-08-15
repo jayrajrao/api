@@ -66,7 +66,7 @@ class UserController {
         });
       }
 
-      const user = await UserModel.findOne({ email });
+      const user = await UserModel.findOne({ email }).select("+password");;
       if (!user) {
         return res.status(401).json({
           success: false,
