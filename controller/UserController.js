@@ -107,12 +107,14 @@ class UserController {
         },
       });
 
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Server error",
-      });
-    }
+   } catch (error) {
+  console.error("Login error:", error);
+
+  res.status(500).json({
+    success: false,
+    message: error.message,
+  });
+}
   };
 
   // ================= LOGOUT =================
